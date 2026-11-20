@@ -1,0 +1,267 @@
+{
+  "entities": {
+    "SiteProfile": {
+      "title": "SiteProfile",
+      "description": "Public portfolio owner profile, about content, academic summary, resume metadata, and site preferences.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "headline": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "subheadline": { "type": "string", "maxLength": 240 },
+        "intro": { "type": "string", "maxLength": 1000 },
+        "aboutText": { "type": "string", "maxLength": 5000 },
+        "location": { "type": "string", "maxLength": 160 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "email": { "type": "string", "maxLength": 160 },
+        "linkedin": { "type": "string", "maxLength": 300 },
+        "github": { "type": "string", "maxLength": 300 },
+        "profilePhotoUrl": { "type": "string", "maxLength": 500 },
+        "resumeUrl": { "type": "string", "maxLength": 500 },
+        "resumeFileName": { "type": "string", "maxLength": 200 },
+        "defaultTheme": { "type": "string", "enum": ["dark", "light"] },
+        "showExperienceSection": { "type": "boolean" },
+        "showWorkshopsSection": { "type": "boolean" },
+        "showResumeDownload": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "headline", "email"]
+    },
+    "CmsSiteConfig": {
+      "title": "CmsSiteConfig",
+      "description": "Published, draft, and previous-snapshot CMS configuration controlling Hero, About, Contact, Navigation, Footer, Appearance, Section Layout, SEO, Settings, and Resume versions.",
+      "type": "object",
+      "properties": {
+        "hero": { "type": "object" },
+        "about": { "type": "object" },
+        "contact": { "type": "object" },
+        "navigation": { "type": "object" },
+        "footer": { "type": "object" },
+        "appearance": { "type": "object" },
+        "layout": { "type": "object" },
+        "seo": { "type": "object" },
+        "settings": { "type": "object" },
+        "resume": { "type": "object" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["hero", "about", "contact", "navigation", "footer", "appearance", "layout", "seo", "settings", "resume"]
+    },
+    "SiteAsset": {
+      "title": "SiteAsset",
+      "description": "Persistent database fallback blob storage for profile images, favicons, logos, and compact documents.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "mimeType": { "type": "string" },
+        "dataUrl": { "type": "string", "maxLength": 750000 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "mimeType", "dataUrl"]
+    },
+    "MediaAsset": {
+      "title": "MediaAsset",
+      "description": "Centralized Admin Media Manager metadata index.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "category": { "type": "string", "enum": ["profile", "project", "certificate", "resume", "logo", "seo", "about", "general"] },
+        "mimeType": { "type": "string", "maxLength": 100 },
+        "fileType": { "type": "string", "enum": ["image", "pdf", "svg"] },
+        "url": { "type": "string", "minLength": 1, "maxLength": 600 },
+        "storageMode": { "type": "string", "enum": ["firebase-storage", "firestore-asset", "server-upload", "public-static"] },
+        "storagePath": { "type": "string", "maxLength": 300 },
+        "size": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "category", "mimeType", "fileType", "url", "storageMode", "size"]
+    },
+    "ProjectItem": {
+      "title": "ProjectItem",
+      "description": "Portfolio project entry with draft/publish workflow, screenshots gallery, and ordering.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 100 },
+        "isFeatured": { "type": "boolean" },
+        "role": { "type": "string", "maxLength": 120 },
+        "shortDescription": { "type": "string", "minLength": 1, "maxLength": 600 },
+        "fullDescription": { "type": "string", "maxLength": 4000 },
+        "personalContribution": { "type": "string", "maxLength": 2000 },
+        "liveDemoUrl": { "type": "string", "maxLength": 500 },
+        "githubUrl": { "type": "string", "maxLength": 500 },
+        "thumbnailUrl": { "type": "string", "maxLength": 500 },
+        "galleryImages": { "type": "array", "items": { "type": "string" } },
+        "projectStatus": { "type": "string", "enum": ["Completed", "In Progress", "Planned"] },
+        "status": { "type": "string", "enum": ["published", "draft"] },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "shortDescription", "status", "order"]
+    },
+    "CertificationItem": {
+      "title": "CertificationItem",
+      "description": "Verified certification record with optional uploaded image or PDF document.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "issuer": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "date": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "gradeOrScore": { "type": "string", "maxLength": 120 },
+        "badgeType": { "type": "string", "maxLength": 160 },
+        "credentialId": { "type": "string", "maxLength": 120 },
+        "credentialUrl": { "type": "string", "maxLength": 500 },
+        "certificateImage": { "type": "string", "maxLength": 500 },
+        "fileType": { "type": "string", "enum": ["image", "pdf", "svg", "none"] },
+        "description": { "type": "string", "maxLength": 1500 },
+        "status": { "type": "string", "enum": ["published", "draft"] },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "issuer", "date", "status", "order"]
+    },
+    "SkillCategoryItem": {
+      "title": "SkillCategoryItem",
+      "description": "Categorized technical skills with optional owner-provided proficiency notes.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "iconName": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "skillDetails": { "type": "array" },
+        "status": { "type": "string", "enum": ["published", "draft"] },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "iconName", "status", "order"]
+    },
+    "EducationEntry": {
+      "title": "EducationEntry",
+      "description": "Academic education record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "level": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "fieldOfStudy": { "type": "string", "maxLength": 160 },
+        "institution": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "boardOrUniversity": { "type": "string", "maxLength": 200 },
+        "year": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "startYear": { "type": "string", "maxLength": 40 },
+        "endYear": { "type": "string", "maxLength": 40 },
+        "scoreLabel": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "scoreValue": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "institutionLogo": { "type": "string", "maxLength": 500 },
+        "supportingDocUrl": { "type": "string", "maxLength": 500 },
+        "isCurrent": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["published", "draft"] },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "level", "institution", "year", "scoreLabel", "scoreValue", "status", "order"]
+    },
+    "ExperienceEntry": {
+      "title": "ExperienceEntry",
+      "description": "Verified internship, workshop, industrial training, professional experience, achievement, event, or volunteering record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "kind": { "type": "string", "enum": ["internship", "workshop", "industrial_training", "professional_experience", "achievement", "event", "volunteering"] },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "organization": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "role": { "type": "string", "maxLength": 120 },
+        "domain": { "type": "string", "maxLength": 120 },
+        "duration": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "startDate": { "type": "string", "maxLength": 60 },
+        "endDate": { "type": "string", "maxLength": 60 },
+        "workMode": { "type": "string", "maxLength": 100 },
+        "credentialId": { "type": "string", "maxLength": 120 },
+        "commencementDate": { "type": "string", "maxLength": 60 },
+        "completionDate": { "type": "string", "maxLength": 60 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "skillsLearned": { "type": "array", "items": { "type": "string" } },
+        "certificateImage": { "type": "string", "maxLength": 500 },
+        "verificationUrl": { "type": "string", "maxLength": 500 },
+        "organizationLogo": { "type": "string", "maxLength": 500 },
+        "isCurrent": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["published", "draft"] },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "kind", "title", "organization", "duration", "status", "order"]
+    },
+    "ContactMessage": {
+      "title": "ContactMessage",
+      "description": "Visitor contact form submission stored privately for admin review.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "email": { "type": "string", "minLength": 5, "maxLength": 160 },
+        "subject": { "type": "string", "minLength": 2, "maxLength": 200 },
+        "message": { "type": "string", "minLength": 5, "maxLength": 4000 },
+        "isRead": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "subject", "message", "isRead", "createdAt"]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized admin user record.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 160 },
+        "role": { "type": "string", "enum": ["admin"] }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/site_settings/{docId}": {
+      "schema": { "$ref": "#/entities/SiteProfile" },
+      "description": "Stores public published portfolio profile ('profile'), admin-only unpublished profile drafts ('profile_draft'), public published CMS configuration ('cms_config'), admin-only CMS draft ('cms_config_draft'), and restore snapshot ('cms_config_prev')."
+    },
+    "/site_assets/{assetId}": {
+      "schema": { "$ref": "#/entities/SiteAsset" },
+      "description": "Stores persistent binary assets ('profile_photo', logos, media fallbacks) in Firestore as a persistent database fallback."
+    },
+    "/media_assets/{assetId}": {
+      "schema": { "$ref": "#/entities/MediaAsset" },
+      "description": "Stores admin media gallery metadata across uploaded images, certificates, resumes, logos, and SEO assets."
+    },
+    "/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/ProjectItem" },
+      "description": "Stores published and draft portfolio projects."
+    },
+    "/certifications/{certId}": {
+      "schema": { "$ref": "#/entities/CertificationItem" },
+      "description": "Stores published and draft certifications."
+    },
+    "/skill_categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/SkillCategoryItem" },
+      "description": "Stores skill categories and skill lists."
+    },
+    "/education/{eduId}": {
+      "schema": { "$ref": "#/entities/EducationEntry" },
+      "description": "Stores academic background entries."
+    },
+    "/experiences/{expId}": {
+      "schema": { "$ref": "#/entities/ExperienceEntry" },
+      "description": "Stores internships, workshops, industrial training, professional experience, achievements, events, and volunteering entries."
+    },
+    "/contact_messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ContactMessage" },
+      "description": "Stores visitor contact inquiries; write-once public create, admin-only read/update/delete."
+    },
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Verified admin allowlist documents."
+    }
+  }
+}

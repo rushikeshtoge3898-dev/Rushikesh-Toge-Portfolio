@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1130 800" width="1130" height="800">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&amp;family=Montserrat:wght@400;500;600;700;800;900&amp;display=swap');
+      .bg { fill: #ffffff; }
+      .blue-navy { fill: #0f172a; }
+      .yellow-gold { fill: #eab308; }
+      .cert-script { font-family: 'Great Vibes', cursive; font-size: 85px; fill: #eab308; text-anchor: middle; }
+      .recipient-name { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 28px; fill: #0f172a; text-anchor: middle; text-decoration: underline; }
+      .course-title { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 20px; fill: #0f172a; text-anchor: middle; }
+      .body-text { font-family: 'Montserrat', sans-serif; font-size: 14px; fill: #334155; text-anchor: middle; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1130" height="800" class="bg" />
+
+  <!-- Outer Border Frame -->
+  <rect x="25" y="25" width="1080" height="750" fill="none" stroke="#0f172a" stroke-width="3" />
+
+  <!-- Left Blue/Gold Diagonal Shapes -->
+  <path d="M 25 25 L 300 25 L 25 580 Z" fill="#0f172a" />
+  <path d="M 25 580 L 300 25 L 350 25 L 25 680 Z" fill="#eab308" />
+
+  <!-- Right Gold Accent Corner -->
+  <path d="M 1105 450 L 1105 775 L 900 775 Z" fill="#eab308" />
+
+  <!-- PMS Logo Top Left -->
+  <g transform="translate(180, 70)">
+    <ellipse cx="60" cy="30" rx="55" ry="25" fill="none" stroke="#0f172a" stroke-width="3" />
+    <text x="60" y="38" font-family="'Montserrat', sans-serif" font-weight="900" font-size="24px" fill="#0f172a" text-anchor="middle">PMS</text>
+  </g>
+
+  <!-- Dr. D Y Patil Logo Center Left -->
+  <g transform="translate(190, 150)">
+    <circle cx="20" cy="20" r="18" fill="#1e3a8a" />
+    <text x="50" y="20" font-family="'Montserrat', sans-serif" font-weight="700" font-size="12px" fill="#0f172a">Dr. D. Y. PATIL</text>
+    <text x="50" y="32" font-family="'Montserrat', sans-serif" font-size="9px" fill="#475569">COLLEGE OF ENGINEERING &amp; INNOVATION</text>
+  </g>
+
+  <!-- Certificate Script Heading -->
+  <g transform="translate(620, 160)">
+    <text x="0" y="0" class="cert-script">Certificate</text>
+    <!-- Ribbon Badge Icon -->
+    <circle cx="170" cy="-40" r="24" fill="#eab308" />
+    <path d="M 160 -20 L 155 10 L 170 -5 L 185 10 L 180 -20 Z" fill="#eab308" />
+  </g>
+
+  <text x="620" y="230" text-anchor="middle" font-family="'Montserrat', sans-serif" font-weight="600" font-size="16px" fill="#475569" letter-spacing="4px">HEREBY CERTIFIES THAT</text>
+
+  <!-- Recipient Name -->
+  <text x="620" y="300" class="recipient-name">MR. TOGE RUSHIKESH NANASAHEB</text>
+
+  <!-- Description Body Text -->
+  <g transform="translate(620, 340)">
+    <text x="0" y="0" class="body-text">of the First Year Engineering, Dr. D Y Patil College of Engineering &amp; Innovation, Pune, has successfully completed</text>
+    <text x="0" y="24" class="body-text">a 3-day hands-on industrial training program on <tspan font-weight="800" fill="#0f172a">"Industrial Automation, Robotics with IIoT."</tspan></text>
+
+    <text x="0" y="70" class="body-text" font-weight="600">Organized by the Department of Engineering Science and Humanities.</text>
+    <text x="0" y="100" class="body-text" font-weight="600">Conducted by the PMS Robotics Research Center, Pune.</text>
+
+    <text x="0" y="145" class="body-text" font-weight="700" fill="#0f172a">From 11.05.2026 to 13.05.2026</text>
+
+    <text x="0" y="185" class="body-text" font-style="italic">We appreciate their efforts for successful completion of the program and wish them all the best!!</text>
+  </g>
+
+  <!-- PMS Stamp & Signatures -->
+  <g transform="translate(720, 580)">
+    <!-- Round Stamp -->
+    <circle cx="-100" cy="30" r="38" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-dasharray="6,2" />
+    <text x="-100" y="25" text-anchor="middle" font-family="'Montserrat', sans-serif" font-weight="800" font-size="10px" fill="#1e3a8a">PMS ROBOTICS</text>
+    <text x="-100" y="38" text-anchor="middle" font-family="'Montserrat', sans-serif" font-weight="800" font-size="9px" fill="#1e3a8a">RESEARCH CENTER</text>
+    <text x="-100" y="50" text-anchor="middle" font-family="'Montserrat', sans-serif" font-weight="700" font-size="9px" fill="#1e3a8a">PUNE</text>
+
+    <!-- Signature -->
+    <path d="M 0 15 C 20 -10, 40 30, 60 5 S 100 20, 120 10" fill="none" stroke="#0f172a" stroke-width="2.5" />
+    <text x="60" y="45" text-anchor="middle" font-family="'Montserrat', sans-serif" font-weight="800" font-size="15px" fill="#0f172a">Mr Rajwardhan Salunke</text>
+    <text x="60" y="63" text-anchor="middle" font-family="'Montserrat', sans-serif" font-weight="600" font-size="12px" fill="#475569">Founder &amp; Center Head</text>
+    <text x="60" y="78" text-anchor="middle" font-family="'Montserrat', sans-serif" font-weight="500" font-size="11px" fill="#64748b">PMS RoBoTics Research Center</text>
+  </g>
+
+  <!-- Reg No Footer -->
+  <text x="620" y="735" text-anchor="middle" font-family="'Montserrat', sans-serif" font-weight="700" font-size="15px" fill="#0f172a">
+    Reg.no: UDYAM-MH-26-63666
+  </text>
+</svg>

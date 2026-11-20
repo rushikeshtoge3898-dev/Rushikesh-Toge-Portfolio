@@ -1,0 +1,380 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Reusable Hardened Helpers ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'rushikeshtoge3898@gmail.com'
+        || exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isBoundedString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function isStringList(val, maxItems) {
+      return val is list && val.size() <= maxItems && (val.size() == 0 || val[0] is string);
+    }
+
+    function isPortfolioLinkList(val, maxItems) {
+      return val is list
+        && val.size() <= maxItems
+        && (
+          val.size() == 0
+          || (
+            val[0] is map
+            && val[0].keys().hasAll(['label', 'url'])
+            && val[0].keys().hasOnly(['label', 'url'])
+            && isBoundedString(val[0].label, 1, 60)
+            && isBoundedString(val[0].url, 1, 300)
+          )
+        );
+    }
+
+    function isValidPublishStatus(val) {
+      return val in ['published', 'draft'];
+    }
+
+    // --- Entity Validation Blueprints ---
+    function isValidSiteProfile(data) {
+      return data.keys().hasAll(['name', 'headline', 'email', 'updatedAt'])
+        && data.keys().hasOnly([
+          'name', 'headline', 'subheadline', 'intro', 'aboutText',
+          'location', 'phone', 'email', 'linkedin', 'github', 'portfolioLinks',
+          'profilePhotoUrl', 'resumeUrl', 'resumeFileName', 'resumeUpdatedAt',
+          'interests', 'spokenLanguages', 'relevantCoursework', 'educationSummary',
+          'defaultTheme', 'showExperienceSection', 'showWorkshopsSection',
+          'showResumeDownload', 'updatedAt'
+        ])
+        && isBoundedString(data.name, 1, 120)
+        && isBoundedString(data.headline, 1, 200)
+        && isBoundedString(data.email, 3, 160)
+        && data.updatedAt == request.time
+        && (!('subheadline' in data) || isBoundedString(data.subheadline, 0, 240))
+        && (!('intro' in data) || isBoundedString(data.intro, 0, 1000))
+        && (!('aboutText' in data) || isBoundedString(data.aboutText, 0, 5000))
+        && (!('location' in data) || isBoundedString(data.location, 0, 160))
+        && (!('phone' in data) || isBoundedString(data.phone, 0, 30))
+        && (!('linkedin' in data) || isBoundedString(data.linkedin, 0, 300))
+        && (!('github' in data) || isBoundedString(data.github, 0, 300))
+        && (!('portfolioLinks' in data) || isPortfolioLinkList(data.portfolioLinks, 10))
+        && (!('profilePhotoUrl' in data) || isBoundedString(data.profilePhotoUrl, 0, 500))
+        && (!('resumeUrl' in data) || isBoundedString(data.resumeUrl, 0, 500))
+        && (!('resumeFileName' in data) || isBoundedString(data.resumeFileName, 0, 200))
+        && (!('resumeUpdatedAt' in data) || isBoundedString(data.resumeUpdatedAt, 0, 80))
+        && (!('interests' in data) || isStringList(data.interests, 25))
+        && (!('spokenLanguages' in data) || isStringList(data.spokenLanguages, 15))
+        && (!('relevantCoursework' in data) || isStringList(data.relevantCoursework, 30))
+        && (!('educationSummary' in data) || data.educationSummary is map)
+        && (!('defaultTheme' in data) || data.defaultTheme in ['dark', 'light'])
+        && (!('showExperienceSection' in data) || data.showExperienceSection is bool)
+        && (!('showWorkshopsSection' in data) || data.showWorkshopsSection is bool)
+        && (!('showResumeDownload' in data) || data.showResumeDownload is bool);
+    }
+
+    function isValidCmsConfig(data) {
+      return data.keys().hasAll([
+          'hero', 'about', 'contact', 'navigation', 'footer',
+          'appearance', 'layout', 'seo', 'settings', 'resume', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'hero', 'about', 'contact', 'navigation', 'footer',
+          'appearance', 'layout', 'seo', 'settings', 'resume', 'updatedAt'
+        ])
+        && data.hero is map
+        && data.about is map
+        && data.contact is map
+        && data.navigation is map
+        && data.footer is map
+        && data.appearance is map
+        && data.layout is map
+        && data.seo is map
+        && data.settings is map
+        && data.resume is map
+        && data.updatedAt == request.time;
+    }
+
+    function isValidSiteAsset(data) {
+      return data.keys().hasAll(['id', 'mimeType', 'dataUrl', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'mimeType', 'dataUrl', 'updatedAt'])
+        && isValidId(data.id)
+        && data.mimeType in ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml', 'application/pdf']
+        && isBoundedString(data.dataUrl, 20, 750000)
+        && data.updatedAt == request.time;
+    }
+
+    function isValidMediaAsset(data) {
+      return data.keys().hasAll(['id', 'name', 'category', 'mimeType', 'fileType', 'url', 'storageMode', 'size', 'createdAt'])
+        && data.keys().hasOnly(['id', 'name', 'category', 'mimeType', 'fileType', 'url', 'storageMode', 'storagePath', 'size', 'createdAt'])
+        && isValidId(data.id)
+        && isBoundedString(data.name, 1, 200)
+        && data.category in ['profile', 'project', 'certificate', 'resume', 'logo', 'seo', 'about', 'general']
+        && isBoundedString(data.mimeType, 1, 100)
+        && data.fileType in ['image', 'pdf', 'svg']
+        && isBoundedString(data.url, 1, 600)
+        && data.storageMode in ['firebase-storage', 'firestore-asset', 'server-upload', 'public-static']
+        && (!('storagePath' in data) || isBoundedString(data.storagePath, 0, 300))
+        && data.size is number
+        && data.createdAt == request.time;
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll(['id', 'title', 'shortDescription', 'status', 'order', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'id', 'title', 'category', 'isFeatured', 'role', 'shortDescription', 'fullDescription',
+          'keyFeatures', 'technologies', 'personalContribution', 'liveDemoUrl',
+          'githubUrl', 'thumbnailUrl', 'galleryImages', 'projectStatus', 'status', 'order',
+          'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isBoundedString(data.title, 1, 200)
+        && isBoundedString(data.shortDescription, 1, 600)
+        && isValidPublishStatus(data.status)
+        && data.order is number
+        && data.updatedAt == request.time
+        && (!('category' in data) || isBoundedString(data.category, 0, 100))
+        && (!('isFeatured' in data) || data.isFeatured is bool)
+        && (!('role' in data) || isBoundedString(data.role, 0, 120))
+        && (!('fullDescription' in data) || isBoundedString(data.fullDescription, 0, 4000))
+        && (!('keyFeatures' in data) || isStringList(data.keyFeatures, 25))
+        && (!('technologies' in data) || isStringList(data.technologies, 30))
+        && (!('personalContribution' in data) || isBoundedString(data.personalContribution, 0, 2000))
+        && (!('liveDemoUrl' in data) || isBoundedString(data.liveDemoUrl, 0, 500))
+        && (!('githubUrl' in data) || isBoundedString(data.githubUrl, 0, 500))
+        && (!('thumbnailUrl' in data) || isBoundedString(data.thumbnailUrl, 0, 500))
+        && (!('galleryImages' in data) || isStringList(data.galleryImages, 12))
+        && (!('projectStatus' in data) || data.projectStatus in ['Completed', 'In Progress', 'Planned']);
+    }
+
+    function isValidCertification(data) {
+      return data.keys().hasAll(['id', 'title', 'issuer', 'date', 'status', 'order', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'id', 'title', 'issuer', 'date', 'gradeOrScore', 'badgeType',
+          'credentialId', 'credentialUrl', 'certificateImage', 'fileType',
+          'description', 'status', 'order', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isBoundedString(data.title, 1, 200)
+        && isBoundedString(data.issuer, 1, 200)
+        && isBoundedString(data.date, 1, 100)
+        && isValidPublishStatus(data.status)
+        && data.order is number
+        && data.updatedAt == request.time
+        && (!('gradeOrScore' in data) || isBoundedString(data.gradeOrScore, 0, 120))
+        && (!('badgeType' in data) || isBoundedString(data.badgeType, 0, 160))
+        && (!('credentialId' in data) || isBoundedString(data.credentialId, 0, 120))
+        && (!('credentialUrl' in data) || isBoundedString(data.credentialUrl, 0, 500))
+        && (!('certificateImage' in data) || isBoundedString(data.certificateImage, 0, 500))
+        && (!('fileType' in data) || data.fileType in ['image', 'pdf', 'svg', 'none'])
+        && (!('description' in data) || isBoundedString(data.description, 0, 1500));
+    }
+
+    function isValidSkillCategory(data) {
+      return data.keys().hasAll(['id', 'title', 'iconName', 'skills', 'status', 'order', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'title', 'iconName', 'skills', 'skillDetails', 'status', 'order', 'createdAt', 'updatedAt'])
+        && isValidId(data.id)
+        && isBoundedString(data.title, 1, 120)
+        && isBoundedString(data.iconName, 1, 40)
+        && isStringList(data.skills, 40)
+        && (!('skillDetails' in data) || (data.skillDetails is list && data.skillDetails.size() <= 40))
+        && isValidPublishStatus(data.status)
+        && data.order is number
+        && data.updatedAt == request.time;
+    }
+
+    function isValidEducation(data) {
+      return data.keys().hasAll(['id', 'level', 'institution', 'year', 'scoreLabel', 'scoreValue', 'status', 'order', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'id', 'level', 'fieldOfStudy', 'institution', 'boardOrUniversity', 'year',
+          'startYear', 'endYear', 'scoreLabel', 'scoreValue', 'description', 'details',
+          'institutionLogo', 'supportingDocUrl', 'isCurrent', 'status',
+          'order', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isBoundedString(data.level, 1, 160)
+        && isBoundedString(data.institution, 1, 200)
+        && isBoundedString(data.year, 1, 80)
+        && isBoundedString(data.scoreLabel, 1, 60)
+        && isBoundedString(data.scoreValue, 1, 60)
+        && isValidPublishStatus(data.status)
+        && data.order is number
+        && data.updatedAt == request.time
+        && (!('fieldOfStudy' in data) || isBoundedString(data.fieldOfStudy, 0, 160))
+        && (!('boardOrUniversity' in data) || isBoundedString(data.boardOrUniversity, 0, 200))
+        && (!('startYear' in data) || isBoundedString(data.startYear, 0, 40))
+        && (!('endYear' in data) || isBoundedString(data.endYear, 0, 40))
+        && (!('description' in data) || isBoundedString(data.description, 0, 2000))
+        && (!('details' in data) || isStringList(data.details, 15))
+        && (!('institutionLogo' in data) || isBoundedString(data.institutionLogo, 0, 500))
+        && (!('supportingDocUrl' in data) || isBoundedString(data.supportingDocUrl, 0, 500))
+        && (!('isCurrent' in data) || data.isCurrent is bool);
+    }
+
+    function isValidExperience(data) {
+      return data.keys().hasAll(['id', 'kind', 'title', 'organization', 'duration', 'status', 'order', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'id', 'kind', 'title', 'organization', 'role', 'domain', 'duration',
+          'startDate', 'endDate', 'workMode', 'credentialId', 'commencementDate',
+          'completionDate', 'description', 'highlights', 'skillsLearned',
+          'technologies', 'certificateImage', 'verificationUrl', 'organizationLogo',
+          'isCurrent', 'status', 'order', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && data.kind in ['internship', 'workshop', 'industrial_training', 'professional_experience', 'achievement', 'event', 'volunteering']
+        && isBoundedString(data.title, 1, 200)
+        && isBoundedString(data.organization, 1, 200)
+        && isBoundedString(data.duration, 1, 100)
+        && isValidPublishStatus(data.status)
+        && data.order is number
+        && data.updatedAt == request.time
+        && (!('role' in data) || isBoundedString(data.role, 0, 120))
+        && (!('domain' in data) || isBoundedString(data.domain, 0, 120))
+        && (!('startDate' in data) || isBoundedString(data.startDate, 0, 60))
+        && (!('endDate' in data) || isBoundedString(data.endDate, 0, 60))
+        && (!('workMode' in data) || isBoundedString(data.workMode, 0, 100))
+        && (!('credentialId' in data) || isBoundedString(data.credentialId, 0, 120))
+        && (!('commencementDate' in data) || isBoundedString(data.commencementDate, 0, 60))
+        && (!('completionDate' in data) || isBoundedString(data.completionDate, 0, 60))
+        && (!('description' in data) || isBoundedString(data.description, 0, 2000))
+        && (!('highlights' in data) || isStringList(data.highlights, 20))
+        && (!('skillsLearned' in data) || isStringList(data.skillsLearned, 25))
+        && (!('technologies' in data) || isStringList(data.technologies, 25))
+        && (!('certificateImage' in data) || isBoundedString(data.certificateImage, 0, 500))
+        && (!('verificationUrl' in data) || isBoundedString(data.verificationUrl, 0, 500))
+        && (!('organizationLogo' in data) || isBoundedString(data.organizationLogo, 0, 500))
+        && (!('isCurrent' in data) || data.isCurrent is bool);
+    }
+
+    function isValidContactMessage(data) {
+      return data.keys().hasAll(['name', 'email', 'subject', 'message', 'isRead', 'createdAt'])
+        && data.keys().hasOnly(['name', 'email', 'subject', 'message', 'isRead', 'createdAt'])
+        && isBoundedString(data.name, 2, 120)
+        && isBoundedString(data.email, 5, 160)
+        && isBoundedString(data.subject, 2, 200)
+        && isBoundedString(data.message, 5, 4000)
+        && data.isRead == false
+        && data.createdAt == request.time;
+    }
+
+    // --- Collection Rules ---
+    match /test/connection {
+      allow get: if true;
+    }
+
+    match /admins/{uid} {
+      allow get: if isValidId(uid) && isSignedIn() && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+
+    match /site_settings/{docId} {
+      allow get: if isValidId(docId) && (
+        docId == 'profile'
+        || docId == 'cms_config'
+        || (docId in ['profile_draft', 'cms_config_draft', 'cms_config_prev'] && isAdmin())
+      );
+      allow list: if isAdmin();
+      allow create: if isValidId(docId) && isAdmin() && (
+        (docId in ['profile', 'profile_draft'] && isValidSiteProfile(incoming()))
+        || (docId in ['cms_config', 'cms_config_draft', 'cms_config_prev'] && isValidCmsConfig(incoming()))
+      );
+      allow update: if isValidId(docId) && isAdmin() && (
+        (docId in ['profile', 'profile_draft'] && isValidSiteProfile(incoming()))
+        || (docId in ['cms_config', 'cms_config_draft', 'cms_config_prev'] && isValidCmsConfig(incoming()))
+      );
+      allow delete: if isValidId(docId) && docId in ['profile_draft', 'cms_config_draft'] && isAdmin();
+    }
+
+    match /site_assets/{assetId} {
+      allow get: if isValidId(assetId);
+      allow list: if isAdmin();
+      allow create: if isValidId(assetId) && isAdmin() && isValidSiteAsset(incoming()) && incoming().id == assetId;
+      allow update: if isValidId(assetId) && isAdmin() && isValidSiteAsset(incoming()) && incoming().id == existing().id;
+      allow delete: if isValidId(assetId) && isAdmin();
+    }
+
+    match /media_assets/{assetId} {
+      allow get: if isValidId(assetId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(assetId) && isAdmin() && isValidMediaAsset(incoming()) && incoming().id == assetId;
+      allow update: if isValidId(assetId) && isAdmin() && isValidMediaAsset(incoming()) && incoming().id == existing().id;
+      allow delete: if isValidId(assetId) && isAdmin();
+    }
+
+    match /projects/{projectId} {
+      allow get: if isValidId(projectId) && (existing().status == 'published' || isAdmin());
+      allow list: if resource.data.status == 'published' || isAdmin();
+      allow create: if isValidId(projectId) && isAdmin() && isValidProject(incoming()) && incoming().id == projectId && incoming().createdAt == request.time;
+      allow update: if isValidId(projectId) && isAdmin() && isValidProject(incoming()) && incoming().id == existing().id && incoming().createdAt == existing().createdAt;
+      allow delete: if isValidId(projectId) && isAdmin();
+    }
+
+    match /certifications/{certId} {
+      allow get: if isValidId(certId) && (existing().status == 'published' || isAdmin());
+      allow list: if resource.data.status == 'published' || isAdmin();
+      allow create: if isValidId(certId) && isAdmin() && isValidCertification(incoming()) && incoming().id == certId && incoming().createdAt == request.time;
+      allow update: if isValidId(certId) && isAdmin() && isValidCertification(incoming()) && incoming().id == existing().id && incoming().createdAt == existing().createdAt;
+      allow delete: if isValidId(certId) && isAdmin();
+    }
+
+    match /skill_categories/{categoryId} {
+      allow get: if isValidId(categoryId) && (existing().status == 'published' || isAdmin());
+      allow list: if resource.data.status == 'published' || isAdmin();
+      allow create: if isValidId(categoryId) && isAdmin() && isValidSkillCategory(incoming()) && incoming().id == categoryId && incoming().createdAt == request.time;
+      allow update: if isValidId(categoryId) && isAdmin() && isValidSkillCategory(incoming()) && incoming().id == existing().id && incoming().createdAt == existing().createdAt;
+      allow delete: if isValidId(categoryId) && isAdmin();
+    }
+
+    match /education/{eduId} {
+      allow get: if isValidId(eduId) && (existing().status == 'published' || isAdmin());
+      allow list: if resource.data.status == 'published' || isAdmin();
+      allow create: if isValidId(eduId) && isAdmin() && isValidEducation(incoming()) && incoming().id == eduId && incoming().createdAt == request.time;
+      allow update: if isValidId(eduId) && isAdmin() && isValidEducation(incoming()) && incoming().id == existing().id && incoming().createdAt == existing().createdAt;
+      allow delete: if isValidId(eduId) && isAdmin();
+    }
+
+    match /experiences/{expId} {
+      allow get: if isValidId(expId) && (existing().status == 'published' || isAdmin());
+      allow list: if resource.data.status == 'published' || isAdmin();
+      allow create: if isValidId(expId) && isAdmin() && isValidExperience(incoming()) && incoming().id == expId && incoming().createdAt == request.time;
+      allow update: if isValidId(expId) && isAdmin() && isValidExperience(incoming()) && incoming().id == existing().id && incoming().createdAt == existing().createdAt;
+      allow delete: if isValidId(expId) && isAdmin();
+    }
+
+    match /contact_messages/{messageId} {
+      allow get: if isValidId(messageId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(messageId) && isValidContactMessage(incoming());
+      allow update: if isValidId(messageId)
+        && isAdmin()
+        && incoming().diff(existing()).affectedKeys().hasOnly(['isRead'])
+        && incoming().isRead is bool;
+      allow delete: if isValidId(messageId) && isAdmin();
+    }
+  }
+}

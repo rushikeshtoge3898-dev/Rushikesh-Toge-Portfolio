@@ -1,0 +1,34 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    function isOwner() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == 'rushikeshtoge3898@gmail.com';
+    }
+
+    match /portfolio/profile/{fileName} {
+      allow read: if true;
+      allow write: if isOwner()
+        && request.resource != null
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(png|jpeg|webp)');
+    }
+
+    match /portfolio/{folder}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner()
+        && folder in ['projects', 'certificates', 'resumes', 'logos', 'media', 'about', 'seo', 'general']
+        && request.resource != null
+        && request.resource.size <= 10 * 1024 * 1024
+        && (
+          request.resource.contentType.matches('image/(png|jpeg|webp|svg\\+xml)')
+          || request.resource.contentType == 'application/pdf'
+        );
+    }
+  }
+}
